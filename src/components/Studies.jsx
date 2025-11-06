@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 function classNames (...xs) { return xs.filter(Boolean).join(' ') }
 
-export function Studies ({ query }) {
+export function Studies ({ query, onCount }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
@@ -15,30 +15,36 @@ export function Studies ({ query }) {
   useEffect(() => { setPage(1) }, [query])
 
   useEffect(() => {
-    if (!query) return
-    let alive = true
-    const ac = new AbortController()
-    ;(async () => {
-      setLoading(true)
-      setErr('')
+    if (!query) {
+      setRows([]);
+      if (onCount) onCount(0);
+      return;
+    }
+    let alive = true;
+    const ac = new AbortController();
+    (async () => {
+      setLoading(true);
+      setErr('');
       try {
-        const url = `${API_BASE}/query/${encodeURIComponent(query)}/studies`
-        const res = await fetch(url, { signal: ac.signal })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`)
-        if (!alive) return
-        const list = Array.isArray(data?.results) ? data.results : []
-        setRows(list)
+        const url = `${API_BASE}/query/${encodeURIComponent(query)}/studies`;
+        const res = await fetch(url, { signal: ac.signal });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+        if (!alive) return;
+        const list = Array.isArray(data?.results) ? data.results : [];
+        setRows(list);
+        if (onCount) onCount(list.length);
       } catch (e) {
-        if (!alive) return
-        setErr(`Unable to fetch studies: ${e?.message || e}`)
-        setRows([])
+        if (!alive) return;
+        setErr(`Unable to fetch studies: ${e?.message || e}`);
+        setRows([]);
+        if (onCount) onCount(0);
       } finally {
-        if (alive) setLoading(false)
+        if (alive) setLoading(false);
       }
-    })()
-    return () => { alive = false; ac.abort() }
-  }, [query])
+    })();
+    return () => { alive = false; ac.abort(); };
+  }, [query, onCount]);
 
   const changeSort = (key) => {
     if (key === sortKey) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
@@ -62,7 +68,7 @@ export function Studies ({ query }) {
   const pageRows = sorted.slice((page - 1) * pageSize, page * pageSize)
 
   return (
-    <div className='flex flex-col rounded-2xl border'>
+    <div className='flex flex-col rounded-2xl border' style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div className='flex items-center justify-between p-3'>
         <div className='card__title'>Studies</div>
         <div className='text-sm text-gray-500'>
@@ -86,8 +92,8 @@ export function Studies ({ query }) {
       )}
 
       {query && !loading && !err && (
-        <div className='overflow-auto'>
-          <table className='min-w-full text-sm'>
+        <div className='studies-scroll' style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'auto', maxHeight: '100%' }}>
+          <table className='min-w-full text-sm' style={{ minWidth: '100%' }}>
             <thead className='sticky top-0 bg-gray-50 text-left'>
               <tr>
                 {[
@@ -99,8 +105,7 @@ export function Studies ({ query }) {
                   <th key={key} className='cursor-pointer px-3 py-2 font-semibold' onClick={() => changeSort(key)}>
                     <span className='inline-flex items-center gap-2'>
                       {label}
-                      <span className='text-xs text-gray-500'>{sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : ''}</span>
-                    </span>
+                      </span>
                   </th>
                 ))}
               </tr>
@@ -124,13 +129,16 @@ export function Studies ({ query }) {
       )}
 
       {query && !loading && !err && (
-        <div className='flex items-center justify-between border-t p-3 text-sm'>
-          <div>Total <b>{sorted.length}</b> records, page <b>{page}</b>/<b>{totalPages}</b></div>
-          <div className='flex items-center gap-2'>
-            <button disabled={page <= 1} onClick={() => setPage(1)} className='rounded-lg border px-2 py-1 disabled:opacity-40'>⏮</button>
+        <div className='flex flex-col border-t p-3 text-sm' style={{ position: 'sticky', bottom: 0, background: '#181a20', zIndex: 2 }}>
+          <div style={{ textAlign: 'center', marginBottom: '0.5em' }}>
+            Total <b>{sorted.length}</b> studies | Page <b>{page}</b> / <b>{totalPages}</b><br />
+            Showing <b>{sorted.length === 0 ? 0 : (page-1)*pageSize+1}</b> - <b>{Math.min(page*pageSize, sorted.length)}</b> studies
+          </div>
+          <div className='flex items-center justify-center gap-2'>
+            <button disabled={page <= 1} onClick={() => setPage(1)} className='rounded-lg border px-2 py-1 disabled:opacity-40'>First</button>
             <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className='rounded-lg border px-2 py-1 disabled:opacity-40'>Previous</button>
             <button disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))} className='rounded-lg border px-2 py-1 disabled:opacity-40'>Next</button>
-            <button disabled={page >= totalPages} onClick={() => setPage(totalPages)} className='rounded-lg border px-2 py-1 disabled:opacity-40'>⏭</button>
+            <button disabled={page >= totalPages} onClick={() => setPage(totalPages)} className='rounded-lg border px-2 py-1 disabled:opacity-40'>Last</button>
           </div>
         </div>
       )}

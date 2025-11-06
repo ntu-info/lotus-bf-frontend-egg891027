@@ -6,6 +6,9 @@ export function Terms ({ onPickTerm }) {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
+  // ¤À­¶ª¬ºA
+  const [page, setPage] = useState(1)
+  const pageSize = 30
 
   useEffect(() => {
     let alive = true
@@ -30,22 +33,30 @@ export function Terms ({ onPickTerm }) {
     return () => { alive = false; ac.abort() }
   }, [])
 
+  // ·j´M¹LÂo
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase()
     if (!s) return terms
     return terms.filter(t => t.toLowerCase().includes(s))
   }, [terms, search])
 
+  // ¤À­¶¸ê®Æ
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const pageTerms = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+  // ·j´M®É¦Û°Ê¸õ¨ì²Ä¤@­¶
+  useEffect(() => { setPage(1) }, [search, filtered.length])
+
   return (
     <div className='terms'>
-      {/* Removed internal <h2> to avoid double "Terms" header. The bold title now comes from App.jsx card__title. */}
-
-      <div className='terms__controls'>
+      {/* ·j´M®Ø»P²M°£«ö¶s */}
+      <div className='terms__controls' style={{ display: 'flex', alignItems: 'center', marginBottom: '1em' }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder='Search termsâ€¦'
+          placeholder='Search terms...'
           className='input'
+          style={{ flex: 1, marginRight: '0.5em' }}
         />
         <button
           onClick={() => setSearch('')}
@@ -54,6 +65,8 @@ export function Terms ({ onPickTerm }) {
           Clear
         </button>
       </div>
+
+      {/* ¤À­¶±±¨î¡]²¾¦Ü¤U¤è¡^ */}
 
       {loading && (
         <div className='terms__skeleton'>
@@ -74,21 +87,34 @@ export function Terms ({ onPickTerm }) {
           {filtered.length === 0 ? (
             <div className='terms__empty'>No terms found</div>
           ) : (
-            <ul className='terms__ul'>
-              {filtered.slice(0, 500).map((t, idx) => (
-                <li key={`${t}-${idx}`} className='terms__li'>
-                  <a
-  href="#"
-  className='terms__name'
-  title={t}
-  aria-label={`Add term ${t}`}
-  onClick={(e) => { e.preventDefault(); onPickTerm?.(t); }}
->
-  {t}
-</a>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className='terms__ul'>
+                {pageTerms.map((t, idx) => (
+                  <li key={`${t}-${(page-1)*pageSize+idx}`} className='terms__li'>
+                    <a
+                      href="#"
+                      className='terms__name'
+                      title={t}
+                      aria-label={`Add term ${t}`}
+                      onClick={(e) => { e.preventDefault(); onPickTerm?.(t); }}
+                    >
+                      {t}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              {/* ¤À­¶¸ê°TÅã¥Ü¦b¤U¤è */}
+                        <div className="terms__pagination" style={{ textAlign: 'center', fontSize: '0.98em', color: '#444', background: '#f5f5f5', borderRadius: '6px', padding: '0.5em' }}>
+                Total <b>{filtered.length}</b> terms | Page <b>{page}</b> / <b>{totalPages}</b><br />
+                Showing <b>{filtered.length === 0 ? 0 : (page-1)*pageSize+1}</b> - <b>{Math.min(page*pageSize, filtered.length)}</b> terms
+                <div style={{ marginTop: '0.5em' }}>
+                  <button disabled={page <= 1} onClick={() => setPage(1)} style={{ marginLeft: '0.5em' }}>First</button>
+                  <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} style={{ marginLeft: '0.3em' }}>Previous</button>
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))} style={{ marginLeft: '0.3em' }}>Next</button>
+                  <button disabled={page >= totalPages} onClick={() => setPage(totalPages)} style={{ marginLeft: '0.3em' }}>Last</button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
