@@ -1,5 +1,5 @@
 
-// é¡¯ç¤ºè¨­å??ï¼?è®? x>0 ??ºç?¾å?¨ç?«é?¢å?³å?´ï????³è?¦å?¨å?³ï??
+// é¡¯ç¤ºè¨­å®šï¼šè®“ x>0 å‡ºç¾åœ¨ç•«é¢å³å´ï¼ˆå³è…¦åœ¨å³ï¼‰
 const X_RIGHT_ON_SCREEN_RIGHT = true;
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -104,7 +104,7 @@ export function NiiViewer({ query }) {
     const res = await fetch(url)
     if (!res.ok) {
       const t = await res.text().catch(()=> '')
-      throw new Error(`GET ${url} ??? ${res.status} ${t}`)
+      throw new Error(`GET ${url} â†’ ${res.status} ${t}`)
     }
     let ab = await res.arrayBuffer()
     if (nifti.isCompressed(ab)) ab = nifti.decompress(ab)
@@ -177,7 +177,7 @@ const coord2idx = (c_mm, n, axis) => {
     ;(async () => {
       try {
         const bg = await loadNifti(MNI_BG_URL)
-  if (!alive) { return; }
+        if (!alive) return
         bgRef.current = bg
         // Always prefer BG dims for the canvas
         setDims(bg.dims)
@@ -186,11 +186,11 @@ const coord2idx = (c_mm, n, axis) => {
         setIx(mx); setIy(my); setIz(mz)
         setCx('0'); setCy('0'); setCz('0')
       } catch (e) {
-  if (!alive) { return; }
+        if (!alive) return
         setErrBG(e?.message || String(e))
         bgRef.current = null
       } finally {
-  if (!alive) { return; }
+        if (!alive) return
         setLoadingBG(false)
       }
     })()
@@ -247,7 +247,7 @@ const coord2idx = (c_mm, n, axis) => {
   function drawSlice (canvas, axis /* 'z' | 'y' | 'x' */, index) {
     const [nx, ny, nz] = dims
     
-    // ??¥è??è®? x>0 ??ºç?¾å?¨ç?«é?¢å?³å?´ï??å°±å?¨å??æ¨??????? X è»¸å??æ°´å¹³ç¿»è??
+    // è‹¥è¦è®“ x>0 å‡ºç¾åœ¨ç•«é¢å³å´ï¼Œå°±åœ¨å–æ¨£æ™‚æŠŠ X è»¸åšæ°´å¹³ç¿»è½‰
     const sx = (x) => (X_RIGHT_ON_SCREEN_RIGHT ? (nx - 1 - x) : x);
     const bg  = bgRef.current
     const map = mapRef.current
